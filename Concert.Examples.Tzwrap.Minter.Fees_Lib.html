@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Fees_Lib</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Fees_Lib</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab142"></a><h1 class="section">Fees Library for the Fees part of the Minter Contract</h1>
+ This file contains helper functions that are used in the Fees file which is a part of the Minter Contract
+    The file this file has been translated from can be found here:
+    https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/minter/fees_lib.mligo
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Storage</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="keyword">Types</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Monads</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Execution</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Containers</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Execution</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ContractCommon</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">Fees_Lib</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">N_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab143"></a><h2 class="section">Substitution function with optional return based on underflow</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">sub</span> (<span class="id" title="var">n</span> <span class="id" title="var">m</span> : <span class="id" title="var">N</span>) : <span class="id" title="var">option</span> <span class="id" title="var">N</span> := <span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">throwIf</span> (<span class="id" title="var">n</span> &lt;? <span class="id" title="var">m</span>) ; <span class="id" title="var">Some</span> (<span class="id" title="var">n</span> - <span class="id" title="var">m</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab144"></a><h2 class="section">Converts N to Basis Points</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">bps_of</span> (<span class="id" title="var">val</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">bps</span> : <span class="id" title="var">bps</span>) : <span class="id" title="var">N</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">val</span> * <span class="id" title="var">bps</span> / 10000.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab145"></a><h2 class="section">Splits input into fees and amount to mint</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">compute_fees</span> (<span class="id" title="var">val</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">bps</span> : <span class="id" title="var">bps</span>) : <span class="id" title="var">option</span> (<span class="id" title="var">N</span> * <span class="id" title="var">N</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">fees</span> := <span class="id" title="var">bps_of</span> <span class="id" title="var">val</span> <span class="id" title="var">bps</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">amount_to_mint</span> &lt;- <span class="id" title="var">sub</span> <span class="id" title="var">val</span> <span class="id" title="var">fees</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">amount_to_mint</span>, <span class="id" title="var">fees</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab146"></a><h2 class="section">Gets the token balance of a specific address on the Ledger</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">token_balance</span> (<span class="id" title="var">ledger</span> : <span class="id" title="var">TokenLedger</span>) (<span class="id" title="var">target</span> : <span class="id" title="var">Address</span>) (<span class="id" title="var">token</span> : <span class="id" title="var">TokenAddress</span>) : <span class="id" title="var">N</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">info_opt</span> := (<span class="id" title="var">FMap.find</span> (<span class="id" title="var">target</span>, <span class="id" title="var">token</span>) <span class="id" title="var">ledger</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">info_opt</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">n</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab147"></a><h2 class="section">Gets the XTZ balance of a specific address on the ledger</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">xtz_balance</span> (<span class="id" title="var">ledger</span>: <span class="id" title="var">XTZLedger</span>) (<span class="id" title="var">target</span>: <span class="id" title="var">Address</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">info_opt</span> := (<span class="id" title="var">FMap.find</span> <span class="id" title="var">target</span> <span class="id" title="var">ledger</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">info_opt</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">n</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab148"></a><h2 class="section">Increments the balance for a specific token</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">inc_token_balance</span> (<span class="id" title="var">ledger</span>: <span class="id" title="var">TokenLedger</span>) (<span class="id" title="var">target</span>: <span class="id" title="var">Address</span>) (<span class="id" title="var">token</span>: <span class="id" title="var">TokenAddress</span>) (<span class="id" title="var">value</span>: <span class="id" title="var">N</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">current_balance</span> := <span class="id" title="var">token_balance</span> <span class="id" title="var">ledger</span> <span class="id" title="var">target</span> <span class="id" title="var">token</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">key</span> := (<span class="id" title="var">target</span>, <span class="id" title="var">token</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">FMap.update</span> <span class="id" title="var">key</span> (<span class="id" title="var">Some</span> (<span class="id" title="var">value</span> + <span class="id" title="var">current_balance</span>)) <span class="id" title="var">ledger</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab149"></a><h2 class="section">Increments the XTZ balance for a specific token</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">inc_xtz_balance</span> (<span class="id" title="var">ledger</span>: <span class="id" title="var">XTZLedger</span>) (<span class="id" title="var">target</span>: <span class="id" title="var">Address</span>) (<span class="id" title="var">value</span>: <span class="id" title="var">N</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">info_opt</span> := (<span class="id" title="var">FMap.find</span> <span class="id" title="var">target</span> <span class="id" title="var">ledger</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_balance</span>:= <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">info_opt</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; <span class="id" title="var">value</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="tactic">info</span> =&gt; <span class="id" title="var">value</span> + <span class="id" title="tactic">info</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">FMap.update</span> <span class="id" title="var">target</span> (<span class="id" title="var">Some</span> (<span class="id" title="var">new_balance</span>)) <span class="id" title="var">ledger</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab150"></a><h2 class="section">Check if fees are high enough</h2>
+ The 2 checking functions are identical because on the LIGO side it is possible to add a fail message, where this is not possible for the throwIf functionality in Coq
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">check_fees_high_enough</span> (<span class="id" title="var">v</span> <span class="id" title="var">min</span>: <span class="id" title="var">N</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">throwIf</span> (<span class="id" title="var">v</span> &lt;? <span class="id" title="var">min</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">check_nft_fees_high_enough</span> (<span class="id" title="var">v</span> <span class="id" title="var">min</span>: <span class="id" title="var">N</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">throwIf</span> (<span class="id" title="var">v</span> &lt;? <span class="id" title="var">min</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Fees_Lib</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
