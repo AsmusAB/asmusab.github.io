@@ -19,6 +19,22 @@
 <h1 class="libtitle">Library FA2_Permissions_Descriptor</h1>
 
 <div class="code">
+</div>
+
+<div class="doc">
+<a name="lab24"></a><h1 class="section">FA2 Permissions Descriptor</h1>
+ This is an implementation of the following file
+
+<div class="paragraph"> </div>
+
+https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/fa2/common/fa2_permissions_descriptor.mligo
+
+<div class="paragraph"> </div>
+
+It contains types for permissions
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">String</span>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
 
@@ -29,6 +45,13 @@
 <span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab25"></a><h2 class="section">Inductive types for policies</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Inductive</span> <span class="id" title="var">OperatorTransferPolicy</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">NoTransfer</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">OwnerTransfer</span><br/>
@@ -41,12 +64,26 @@
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">RequiredOwnerHook</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab26"></a><h2 class="section">Custom Permission Policy</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Record</span> <span class="id" title="var">CustomPermissionPolicy</span> := <span class="id" title="var">mkCustomPermissionPolicy</span> {<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tag</span> : <span class="id" title="var">string</span> ;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">config_api</span> : <span class="id" title="var">option</span> <span class="id" title="var">Address</span><br/>
 }.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab27"></a><h2 class="section">Permission Descriptor</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Record</span> <span class="id" title="var">PermissionsDescriptor</span> := <span class="id" title="var">mkPermissionsDescriptor</span> {<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">operator</span> : <span class="id" title="var">OperatorTransferPolicy</span> ;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">receiver</span> : <span class="id" title="var">OwnerHookPolicy</span> ; <br/>

@@ -19,6 +19,22 @@
 <h1 class="libtitle">Library FA2_Operator_Lib</h1>
 
 <div class="code">
+</div>
+
+<div class="doc">
+<a name="lab28"></a><h1 class="section">FA2 Operator Lib</h1>
+ This is an implementation of the following file
+
+<div class="paragraph"> </div>
+
+https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/fa2/common/lib/fa2_operator_lib.mligo
+
+<div class="paragraph"> </div>
+
+It contains types for permissions
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2_Permissions_Descriptor</span>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Examples.FA2</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface</span>.<br/>
@@ -35,9 +51,23 @@
 <span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab29"></a><h2 class="section">Storage for operators</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">OperatorStorage</span> := <span class="id" title="var">FMap</span> (<span class="id" title="var">Address</span> * (<span class="id" title="var">Address</span> * <span class="id" title="var">token_id</span>)) <span class="id" title="var">unit</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab30"></a><h2 class="section">Update Operators</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">update_operators</span> (<span class="id" title="var">update</span> : <span class="id" title="var">update_operator</span>) (<span class="id" title="var">storage</span> : <span class="id" title="var">OperatorStorage</span>) : <span class="id" title="var">OperatorStorage</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">update</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">add_operator</span> <span class="id" title="var">op</span> =&gt; <span class="id" title="var">FMap.update</span> (<span class="id" title="var">op</span>.(<span class="id" title="var">op_param_owner</span>), (<span class="id" title="var">op</span>.(<span class="id" title="var">op_param_operator</span>), <span class="id" title="var">op</span>.(<span class="id" title="var">op_param_token_id</span>))) (<span class="id" title="var">Some</span> <span class="id" title="var">tt</span>) <span class="id" title="var">storage</span><br/>
@@ -45,6 +75,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab31"></a><h2 class="section">Validate Update Operators By Owner</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">validate_update_operators_by_owner</span> (<span class="id" title="var">update</span> : <span class="id" title="var">update_operator</span>) (<span class="id" title="var">updater</span> : <span class="id" title="var">Address</span>) : <span class="id" title="var">option</span> <span class="id" title="var">unit</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">op</span> := <span class="id" title="keyword">match</span> <span class="id" title="var">update</span> <span class="id" title="keyword">with</span> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">add_operator</span> <span class="id" title="var">op</span> =&gt; <span class="id" title="var">op</span><br/>
@@ -54,6 +91,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">op</span>.(<span class="id" title="var">op_param_owner</span>) <span class="id" title="var">updater</span> <span class="id" title="keyword">then</span> <span class="id" title="var">Some</span> <span class="id" title="var">tt</span> <span class="id" title="keyword">else</span> <span class="id" title="var">None</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab32"></a><h2 class="section">FA2 Update Operators</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">fa2_update_operators</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">updates</span> : <span class="id" title="var">list</span> <span class="id" title="var">update_operator</span>) (<span class="id" title="var">storage</span> : <span class="id" title="var">OperatorStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">OperatorStorage</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">updater</span> := <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) <span class="id" title="tactic">in</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">process_update</span> := <span class="id" title="keyword">fun</span> (<span class="id" title="var">ops_opt</span> : <span class="id" title="var">option</span> <span class="id" title="var">OperatorStorage</span>) (<span class="id" title="var">update</span> : <span class="id" title="var">update_operator</span>) =&gt;<br/>
@@ -64,9 +108,23 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fold_left</span> <span class="id" title="var">process_update</span> <span class="id" title="var">updates</span> (<span class="id" title="var">Some</span> <span class="id" title="var">storage</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab33"></a><h2 class="section">Operator Validator</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">OperatorValidator</span> := <span class="id" title="var">Address</span> -&gt; <span class="id" title="var">Address</span> -&gt; <span class="id" title="var">token_id</span> -&gt; <span class="id" title="var">OperatorStorage</span> -&gt; <span class="id" title="var">option</span> <span class="id" title="var">unit</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab34"></a><h2 class="section">Make Operator Validator</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">make_operator_validator</span> (<span class="id" title="var">tx_policy</span> : <span class="id" title="var">OperatorTransferPolicy</span>) : <span class="id" title="var">option</span> <span class="id" title="var">OperatorValidator</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">can_tpl</span> &lt;- <span class="id" title="keyword">match</span> <span class="id" title="var">tx_policy</span> <span class="id" title="keyword">with</span> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">NoTransfer</span> =&gt; <span class="id" title="var">None</span><br/>
@@ -80,6 +138,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> <span class="id" title="var">tt</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab35"></a><h2 class="section">Default Operator Validator</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">default_operator_validator</span> : <span class="id" title="var">OperatorValidator</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">fun</span> (<span class="id" title="var">owner</span>: <span class="id" title="var">Address</span>) (<span class="id" title="var">operator</span> : <span class="id" title="var">Address</span>) (<span class="id" title="var">token_id</span> : <span class="id" title="var">token_id</span>) (<span class="id" title="var">ops_storage</span> : <span class="id" title="var">OperatorStorage</span>) =&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">owner</span> <span class="id" title="var">operator</span> <span class="id" title="keyword">then</span> <span class="id" title="var">Some</span> <span class="id" title="var">tt</span><br/>
@@ -87,6 +152,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> <span class="id" title="var">tt</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a name="lab36"></a><h2 class="section">Validate Operator</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">validate_operator</span> (<span class="id" title="var">ctx</span>: <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">tx_policy</span>: <span class="id" title="var">OperatorTransferPolicy</span>) (<span class="id" title="var">transfers</span>: <span class="id" title="var">list</span> <span class="id" title="var">transfer</span>) (<span class="id" title="var">ops_storage</span> : <span class="id" title="var">OperatorStorage</span>)  : <span class="id" title="var">option</span> <span class="id" title="var">unit</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">validator</span> &lt;- <span class="id" title="var">make_operator_validator</span> <span class="id" title="var">tx_policy</span> ;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fold_left</span> (<span class="id" title="keyword">fun</span> (<span class="id" title="var">acc_opt</span> : <span class="id" title="var">option</span> <span class="id" title="var">unit</span>) (<span class="id" title="var">tx</span>: <span class="id" title="var">transfer</span>) =&gt; <br/>
