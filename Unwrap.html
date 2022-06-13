@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Unwrap</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Unwrap</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab237"></a><h1 class="section">Unwrap endpoints</h1>
+ This is an implementation of the following file.
+https://github.com/bender-labs/wrap-tz-contracts/blob/master/ligo/minter/unwrap.mligo.
+
+<div class="paragraph"> </div>
+
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Tokens_Lib</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Fees_Lib</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Ethereum_Lib</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Examples</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface_Wrap</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Storage</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Monads</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Execution</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Serializable</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">ListNotations</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab238"></a><h1 class="section">Types</h1>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Section</span> <span class="id" title="var">Unwrap</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+<span class="id" title="keyword">Set</span> <span class="id" title="var">Nonrecursive</span> <span class="id" title="var">Elimination</span> <span class="id" title="var">Schemes</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">N_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Record</span> <span class="id" title="var">UnwrapERC20Parameters</span> : <span class="id" title="keyword">Type</span> := <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkUnwrapERC20Parameters</span> {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc_20</span> : <span class="id" title="var">EthAddress</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">up_amount</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">up_fees</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">up_erc20_destination</span> : <span class="id" title="var">EthAddress</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Record</span> <span class="id" title="var">UnwrapERC721Parameters</span> : <span class="id" title="keyword">Type</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkUnwrapERC721Parameters</span> {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc_721</span> : <span class="id" title="var">EthAddress</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">up_token_id</span> : <span class="id" title="var">token_id</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">up_erc721_destination</span> : <span class="id" title="var">EthAddress</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">UnwrapEntrypoints</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">unwrap_erc20_entrypoint</span> (<span class="id" title="var">unwrap_erc20_params</span> : <span class="id" title="var">UnwrapERC20Parameters</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">unwrap_erc721_entrypoint</span> (<span class="id" title="var">unwrap_erc721_params</span> : <span class="id" title="var">UnwrapERC721Parameters</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab239"></a><h1 class="section">Implementation</h1>
+<a name="lab240"></a><h2 class="section">Unwrap ERC20</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">unwrap_erc20</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">UnwrapERC20Parameters</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">State</span>) : <span class="id" title="var">option</span> <span class="id" title="var">ReturnType</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">governance</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">governance</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">assets</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">assets</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">fees_storage</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">token_address_opt</span> := <span class="id" title="var">get_fa2_token_id</span> <span class="id" title="var">p</span>.(<span class="id" title="var">erc_20</span>) <span class="id" title="var">assets</span>.(<span class="id" title="var">erc20tokens</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">token_address_opt</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">token_address</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> (<span class="id" title="var">contract_address</span>, <span class="id" title="var">token_id</span>) := <span class="id" title="var">token_address</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">min_fees</span> := <span class="id" title="var">bps_of</span> <span class="id" title="var">p</span>.(<span class="id" title="var">up_amount</span>) <span class="id" title="var">governance</span>.(<span class="id" title="var">erc20_unwrapping_fees</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">check_fees_high_enough</span> <span class="id" title="var">p</span>.(<span class="id" title="var">up_fees</span>) <span class="id" title="var">min_fees</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">burnTokensParams</span> := {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_owner</span>:= <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_token_id</span> := <span class="id" title="var">token_id</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_amount</span> := <span class="id" title="var">p</span>.(<span class="id" title="var">up_amount</span>) + <span class="id" title="var">p</span>.(<span class="id" title="var">up_fees</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|} <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">burn</span> := <span class="id" title="var">act_call</span> <span class="id" title="var">contract_address</span> 0 (<span class="id" title="var">serialize</span> (<span class="id" title="var">BurnTokens</span> [<span class="id" title="var">burnTokensParams</span>])) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">ops</span> := <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">p</span>.(<span class="id" title="var">up_fees</span>) =? 0<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> [<span class="id" title="var">burn</span>]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">mintTokensParams</span> :=  {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_owner</span> := <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_contract_address</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_token_id</span> := <span class="id" title="var">token_id</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_amount</span> := <span class="id" title="var">p</span>.(<span class="id" title="var">up_fees</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|} <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[<span class="id" title="var">burn</span>] ++ [<span class="id" title="var">act_call</span> <span class="id" title="var">contract_address</span> 0 (<span class="id" title="var">serialize</span> (<span class="id" title="var">MintTokens</span> [<span class="id" title="var">mintTokensParams</span>]))]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_ledger</span> := <span class="id" title="var">inc_token_balance</span> <span class="id" title="var">fees_storage</span>.(<span class="id" title="var">fees_storage_tokens</span>) <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_contract_address</span>) <span class="id" title="var">token_address</span> <span class="id" title="var">p</span>.(<span class="id" title="var">up_fees</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> ({|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">admin</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">admin</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">assets</span> := <span class="id" title="var">assets</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">governance</span> := <span class="id" title="var">governance</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees</span> := {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_signers</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>).(<span class="id" title="var">fees_storage_signers</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_tokens</span> := <span class="id" title="var">new_ledger</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_xtz</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>).(<span class="id" title="var">fees_storage_xtz</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|};<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">storage_metadata</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">storage_metadata</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}, <span class="id" title="var">ops</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab241"></a><h2 class="section">Unwrap ERC721</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">unwrap_erc721</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">UnwrapERC721Parameters</span>) (<span class="id" title="var">s</span>: <span class="id" title="var">State</span>) : <span class="id" title="var">option</span> <span class="id" title="var">ReturnType</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">governance</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">governance</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">assets</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">assets</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">fees_storage</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">amountN</span> := <span class="id" title="var">Z.to_N</span> <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_amount</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">ignore</span> &lt;- <span class="id" title="var">check_nft_fees_high_enough</span> <span class="id" title="var">amountN</span> <span class="id" title="var">governance</span>.(<span class="id" title="var">erc721_unwrapping_fees</span>) ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">contract_address_opt</span> := <span class="id" title="var">get_nft_contract</span> <span class="id" title="var">p</span>.(<span class="id" title="var">erc_721</span>) <span class="id" title="var">assets</span>.(<span class="id" title="var">erc721tokens</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">contract_address_opt</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">contract_address</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">burnTokensParams</span> := {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_owner</span> := <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_token_id</span> := <span class="id" title="var">p</span>.(<span class="id" title="var">up_token_id</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_amount</span> := 1<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|} <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">burn</span> := <span class="id" title="var">act_call</span> <span class="id" title="var">contract_address</span> 0 (<span class="id" title="var">serialize</span> (<span class="id" title="var">BurnTokens</span> [<span class="id" title="var">burnTokensParams</span>])) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_ledger</span> := <span class="id" title="var">inc_xtz_balance</span> <span class="id" title="var">fees_storage</span>.(<span class="id" title="var">fees_storage_xtz</span>) <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_contract_address</span>) <span class="id" title="var">amountN</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> ({|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">admin</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">admin</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">assets</span> := <span class="id" title="var">assets</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">governance</span> := <span class="id" title="var">governance</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees</span> := {|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_signers</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>).(<span class="id" title="var">fees_storage_signers</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_tokens</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">fees</span>).(<span class="id" title="var">fees_storage_tokens</span>);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_xtz</span> := <span class="id" title="var">new_ledger</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|};<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">storage_metadata</span> := <span class="id" title="var">s</span>.(<span class="id" title="var">storage_metadata</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|}, [<span class="id" title="var">burn</span>]) <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab242"></a><h2 class="section">Main entrypoint</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">unwrap_main</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">UnwrapEntrypoints</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">State</span>) : <span class="id" title="var">option</span> <span class="id" title="var">ReturnType</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">p</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">unwrap_erc20_entrypoint</span> <span class="id" title="var">p</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">fail_if_amount</span> <span class="id" title="var">ctx</span> ; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">unwrap_erc20</span> <span class="id" title="var">ctx</span> <span class="id" title="var">p</span> <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">unwrap_erc721_entrypoint</span> <span class="id" title="var">p</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">unwrap_erc721</span> <span class="id" title="var">ctx</span> <span class="id" title="var">p</span> <span class="id" title="var">s</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Unwrap</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

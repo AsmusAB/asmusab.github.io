@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>TokenAdmin</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library TokenAdmin</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab24"></a><h1 class="section">Token Admin part of FA2Tokens contract</h1>
+ This file contains an implementation of 
+    https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/fa2/fa2_modules/token_admin.mligo
+
+<div class="paragraph"> </div>
+
+    This file, when used by the FA2Tokens contract, gives functionality to the admin
+    for changing admins, the accepted minter address, confirming the admin and pausing tokens. 
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Containers</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface_Wrap</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Examples.FA2</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">RecordUpdate</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Monads</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">ListNotations</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Serializable</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">TokenAdmin</span>.<br/>
+<span class="id" title="keyword">Set</span> <span class="id" title="var">Nonrecursive</span> <span class="id" title="var">Elimination</span> <span class="id" title="var">Schemes</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab25"></a><h2 class="section">Types for keeping state</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">PausedTokensSet</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">FMap</span> <span class="id" title="var">N</span> <span class="id" title="var">unit</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Record</span> <span class="id" title="var">TokenAdminStorage</span> := {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tas_admin</span> : <span class="id" title="var">Address</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tas_pending_admin</span> : <span class="id" title="var">option</span> <span class="id" title="var">Address</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tas_paused</span> : <span class="id" title="var">PausedTokensSet</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tas_minter</span> : <span class="id" title="var">Address</span><br/>
+}.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab26"></a><h2 class="section">Set admin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_admin</span> (<span class="id" title="var">new_admin</span> : <span class="id" title="var">Address</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">TokenAdminStorage</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;| <span class="id" title="var">tas_pending_admin</span> := <span class="id" title="var">Some</span> <span class="id" title="var">new_admin</span> |&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab27"></a><h2 class="section">Confirm admin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">confirm_new_admin</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">TokenAdminStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">TokenAdminStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">s</span>.(<span class="id" title="var">tas_pending_admin</span>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">pending</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) <span class="id" title="var">pending</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">s</span>&lt;| <span class="id" title="var">tas_pending_admin</span> := <span class="id" title="var">None</span> |&gt;&lt;| <span class="id" title="var">tas_admin</span> := <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) |&gt;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab28"></a><h2 class="section">Pause one or more tokens</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">pause</span> (<span class="id" title="var">tokens</span> : <span class="id" title="var">list</span> <span class="id" title="var">PauseParam</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">TokenAdminStorage</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_paused</span> := <span class="id" title="var">fold_left</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> (<span class="id" title="var">paused_set</span> : <span class="id" title="var">PausedTokensSet</span>) (<span class="id" title="var">t</span> : <span class="id" title="var">PauseParam</span>) =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">t</span>.(<span class="id" title="var">pp_paused</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <span class="id" title="var">FMap.add</span> <span class="id" title="var">t</span>.(<span class="id" title="var">pp_token_id</span>) <span class="id" title="var">tt</span> <span class="id" title="var">paused_set</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">FMap.remove</span> <span class="id" title="var">t</span>.(<span class="id" title="var">pp_token_id</span>) <span class="id" title="var">paused_set</span><br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">tokens</span> <span class="id" title="var">s</span>.(<span class="id" title="var">tas_paused</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;| <span class="id" title="var">tas_paused</span> := <span class="id" title="var">new_paused</span> |&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab29"></a><h2 class="section">Fail if not admin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">fail_if_not_admin</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">a</span> : <span class="id" title="var">TokenAdminStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">TokenAdminStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) <span class="id" title="var">a</span>.(<span class="id" title="var">tas_admin</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <span class="id" title="var">Some</span> <span class="id" title="var">a</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">None</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab30"></a><h2 class="section">Fail if not minter</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">fail_if_not_minter</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">a</span> : <span class="id" title="var">TokenAdminStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">TokenAdminStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) <span class="id" title="var">a</span>.(<span class="id" title="var">tas_minter</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <span class="id" title="var">Some</span> <span class="id" title="var">a</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">None</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab31"></a><h2 class="section">Fail if paused tokens</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">fail_if_paused_tokens</span> (<span class="id" title="var">transfers</span> : <span class="id" title="var">list</span> <span class="id" title="var">transfer</span>) (<span class="id" title="var">paused</span> : <span class="id" title="var">PausedTokensSet</span>) : <span class="id" title="var">option</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fold_left</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;( <span class="id" title="keyword">fun</span> (<span class="id" title="var">acc_opt</span> : <span class="id" title="var">option</span> <span class="id" title="var">unit</span>) (<span class="id" title="var">tx</span> : <span class="id" title="var">transfer</span>) =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">acc_opt</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fold_left</span> (<span class="id" title="keyword">fun</span> (<span class="id" title="var">acc_opt_inner</span> : <span class="id" title="var">option</span> <span class="id" title="var">unit</span>) (<span class="id" title="var">txd</span> : <span class="id" title="var">transfer_destination</span>) =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">acc_opt_inner</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">FMap.find</span> <span class="id" title="var">txd</span>.(<span class="id" title="var">dst_token_id</span>) <span class="id" title="var">paused</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt; <span class="id" title="var">Some</span> <span class="id" title="var">tt</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) <span class="id" title="var">tx</span>.(<span class="id" title="var">txs</span>) (<span class="id" title="var">Some</span> <span class="id" title="var">tt</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;) <span class="id" title="var">transfers</span> (<span class="id" title="var">Some</span> <span class="id" title="var">tt</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab32"></a><h2 class="section">Fail if paused</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">fail_if_paused</span> (<span class="id" title="var">a</span> : <span class="id" title="var">TokenAdminStorage</span>) (<span class="id" title="var">param</span> : <span class="id" title="var">FA2EntryPoints</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">param</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Balance_of</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">Some</span> <span class="id" title="var">tt</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Update_operators</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">Some</span> <span class="id" title="var">tt</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">FA2_Transfer</span> <span class="id" title="var">transfer</span> =&gt; <span class="id" title="var">fail_if_paused_tokens</span> <span class="id" title="var">transfer</span> <span class="id" title="var">a</span>.(<span class="id" title="var">tas_paused</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab33"></a><h2 class="section">Token Admin main method</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">token_admin</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">param</span> : <span class="id" title="var">TokenAdmin</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">TokenAdminStorage</span>) : <span class="id" title="var">option</span> (<span class="id" title="var">TokenAdminStorage</span> * (<span class="id" title="var">list</span> <span class="id" title="var">ActionBody</span>)) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">param</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_admin</span> <span class="id" title="var">new_admin</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">s</span> &lt;- <span class="id" title="var">fail_if_not_admin</span> <span class="id" title="var">ctx</span> <span class="id" title="var">s</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_s</span> := <span class="id" title="var">set_admin</span> <span class="id" title="var">new_admin</span> <span class="id" title="var">s</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">new_s</span>, [])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Confirm_admin</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">new_s</span> &lt;- <span class="id" title="var">confirm_new_admin</span> <span class="id" title="var">ctx</span> <span class="id" title="var">s</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">new_s</span>, [])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Pause</span> <span class="id" title="var">tokens</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">s</span> &lt;- <span class="id" title="var">fail_if_not_admin</span> <span class="id" title="var">ctx</span> <span class="id" title="var">s</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_s</span> := <span class="id" title="var">pause</span> <span class="id" title="var">tokens</span> <span class="id" title="var">s</span> <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">new_s</span>, [])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_minter</span> <span class="id" title="var">p</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">s</span> &lt;- <span class="id" title="var">fail_if_not_admin</span> <span class="id" title="var">ctx</span> <span class="id" title="var">s</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">s</span>&lt;| <span class="id" title="var">tas_minter</span> := <span class="id" title="var">p</span> |&gt;, [])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">TokenAdmin</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

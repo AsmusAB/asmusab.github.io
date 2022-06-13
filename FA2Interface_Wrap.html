@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>FA2Interface_Wrap</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library FA2Interface_Wrap</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab17"></a><h1 class="section">FA2Interface for TzWrap</h1>
+ This file contains the things from 
+https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/fa2/common/fa2_interface.mligo
+that are not present in the standard FA2Interface
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Examples.FA2</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="keyword">Types</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Serializable</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Utils</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">RecordUpdate</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Containers</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">String</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">FA2Interface_Wrap</span>.<br/>
+<span class="id" title="keyword">Set</span> <span class="id" title="var">Nonrecursive</span> <span class="id" title="var">Elimination</span> <span class="id" title="var">Schemes</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">N_scope</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab18"></a><h2 class="section">Record for mint/burn transaction</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">MintBurnTx</span> := <span class="id" title="var">mkMintBurnTx</span> {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_owner</span>: <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_token_id</span> : <span class="id" title="var">token_id</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mint_burn_amount</span>: <span class="id" title="var">N</span>;<br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">MintBurnTokensParam</span> : <span class="id" title="keyword">Type</span> := <span class="id" title="var">list</span> <span class="id" title="var">MintBurnTx</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab19"></a><h2 class="section">Endpoints for the TokenManager</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">TokenManager</span> := <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">MintTokens</span> (<span class="id" title="var">p</span> : <span class="id" title="var">MintBurnTokensParam</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">BurnTokens</span> (<span class="id" title="var">p</span> : <span class="id" title="var">MintBurnTokensParam</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab20"></a><h2 class="section">Param and endpoints for TokenAdmin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">PauseParam</span> := <span class="id" title="var">mkPauseParam</span> {<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">pp_token_id</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">pp_paused</span> : <span class="id" title="var">bool</span><br/>
+}.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">TokenAdmin</span> :=<br/>
+| <span class="id" title="var">Set_admin</span> (<span class="id" title="var">addr</span> : <span class="id" title="var">Address</span>)<br/>
+| <span class="id" title="var">Confirm_admin</span><br/>
+| <span class="id" title="var">Pause</span> (<span class="id" title="var">param</span> : <span class="id" title="var">list</span> <span class="id" title="var">PauseParam</span>)<br/>
+| <span class="id" title="var">Set_minter</span> (<span class="id" title="var">addr</span> : <span class="id" title="var">Address</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab21"></a><h2 class="section">Maps for holding metadata</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">ContractMetadata</span> := <span class="id" title="var">FMap</span> <span class="id" title="var">string</span> <span class="id" title="var">N</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">TokenMetaDataStorage</span> := <span class="id" title="var">FMap</span> <span class="id" title="var">token_id</span> <span class="id" title="var">token_metadata</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab22"></a><h2 class="section">Standard endpoints for FA2</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">FA2EntryPoints</span> :=<br/>
+| <span class="id" title="var">FA2_Transfer</span> (<span class="id" title="var">transfers</span> : <span class="id" title="var">list</span> <span class="id" title="var">transfer</span>)<br/>
+| <span class="id" title="var">Balance_of</span> (<span class="id" title="var">balanceOf</span> : <span class="id" title="var">balance_of_param</span>)<br/>
+| <span class="id" title="var">Update_operators</span> (<span class="id" title="var">updates</span> : <span class="id" title="var">list</span> <span class="id" title="var">update_operator</span>).<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab23"></a><h2 class="section">Endpoints for MultiTokenAdmin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Inductive</span> <span class="id" title="var">MultiTokenAdmin</span> := <br/>
+| <span class="id" title="var">Token_admin</span> (<span class="id" title="var">tokenAdmin</span> : <span class="id" title="var">TokenAdmin</span>)<br/>
+| <span class="id" title="var">Create_token</span> (<span class="id" title="var">tokenMetaData</span> : <span class="id" title="var">token_metadata</span>).<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">FA2Interface_Wrap</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

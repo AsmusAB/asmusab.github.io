@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>MultiTokenAdmin</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library MultiTokenAdmin</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab94"></a><h1 class="section">Multi Token Admin</h1>
+ This file contains the implementation of 
+https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/fa2/multi_asset/multi_token_admin.mligo
+
+<div class="paragraph"> </div>
+
+It contains functionality available to the admin to either update the deployment of the contract or create a new token to be wrapped. 
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Containers</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">RecordUpdate</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Types</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface_Wrap</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Examples.FA2</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">FA2Interface</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">TokenAdmin</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Monads</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">ListNotations</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">N_scope</span>.<br/>
+</div>
+
+<div class="doc">
+<a name="lab95"></a><h1 class="section">Implementation</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">MultiTokenAdmin</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab96"></a><h2 class="section">Create token</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">create_token</span> (<span class="id" title="var">metadata</span> : <span class="id" title="var">token_metadata</span>) (<span class="id" title="var">storage</span> : <span class="id" title="var">MultiTokenStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">MultiTokenStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_token_id</span> := <span class="id" title="var">metadata</span>.(<span class="id" title="var">metadata_token_id</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">existing_meta</span> := <span class="id" title="var">FMap.find</span> <span class="id" title="var">new_token_id</span> <span class="id" title="var">storage</span>.(<span class="id" title="var">mts_token_metadata</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">existing_meta</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Some</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">None</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">None</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">meta</span> := <span class="id" title="var">FMap.update</span> <span class="id" title="var">new_token_id</span> (<span class="id" title="var">Some</span> <span class="id" title="var">metadata</span>) <span class="id" title="var">storage</span>.(<span class="id" title="var">mts_token_metadata</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">supply</span> := <span class="id" title="var">FMap.update</span> <span class="id" title="var">new_token_id</span> (<span class="id" title="var">Some</span> 0) <span class="id" title="var">storage</span>.(<span class="id" title="var">token_total_supply</span>) <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">storage</span>&lt;|<span class="id" title="var">mts_token_metadata</span> := <span class="id" title="var">meta</span>|&gt;&lt;|<span class="id" title="var">token_total_supply</span> := <span class="id" title="var">supply</span>|&gt;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab97"></a><h2 class="section">Main method for MultiTokenAdmin</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">multi_token_admin_main</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">MultiTokenAdmin</span>) (<span class="id" title="var">s</span>: <span class="id" title="var">MultiAssetStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">Return</span> := <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">p</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Token_admin</span> <span class="id" title="var">p</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">tpl</span> &lt;- <span class="id" title="var">token_admin</span> <span class="id" title="var">ctx</span> <span class="id" title="var">p</span> <span class="id" title="var">s</span>.(<span class="id" title="var">fa2_admin</span>) ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_s</span> := <span class="id" title="var">s</span>&lt;|<span class="id" title="var">fa2_admin</span>:= (<span class="id" title="var">fst</span> <span class="id" title="var">tpl</span>) |&gt; <span class="id" title="tactic">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">new_s</span>, <span class="id" title="var">snd</span> <span class="id" title="var">tpl</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Create_token</span> <span class="id" title="var">p</span> =&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">res</span> &lt;- <span class="id" title="var">create_token</span> <span class="id" title="var">p</span> <span class="id" title="var">s</span>.(<span class="id" title="var">fa2_assets</span>) ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> (<span class="id" title="var">s</span>&lt;|<span class="id" title="var">fa2_assets</span>:= <span class="id" title="var">res</span> |&gt;, [])<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">MultiTokenAdmin</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

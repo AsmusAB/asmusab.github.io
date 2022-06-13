@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Governance</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Governance</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab151"></a><h1 class="section">Governance part of the Minter Contract</h1>
+ The content of this file is the governance part of the minters functionality 
+    The file this file has been translated from can be found here:
+    https://github.com/bender-labs/wrap-tz-contracts/blob/1655949e61b05a1c25cc00dcb8c1da9d91799f31/ligo/minter/governance.mligo
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Storage</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Governance_Interface</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">List</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Monads</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ContractCommon</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">ListNotations</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Utils</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">RecordUpdate</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">N</span>.<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">Governance</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab152"></a><h2 class="section">Fail if the caller is not the governance contract</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">fail_if_not_governance</span> (<span class="id" title="var">ctx</span>: <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">option</span> <span class="id" title="var">unit</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">address_eqb</span> <span class="id" title="var">ctx</span>.(<span class="id" title="var">ctx_from</span>) <span class="id" title="var">s</span>.(<span class="id" title="var">contract</span>) <span class="id" title="keyword">then</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> <span class="id" title="var">tt</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">None</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab153"></a><h2 class="section">Set the ERC 20 Wrapping fees</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_erc_20_wrapping_fees</span> (<span class="id" title="var">v</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;|<span class="id" title="var">erc20_wrapping_fees</span> := <span class="id" title="var">v</span>|&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab154"></a><h2 class="section">Set the ERC 20 Unwrapping fees</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_erc_20_unwrapping_fees</span> (<span class="id" title="var">v</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;|<span class="id" title="var">erc20_unwrapping_fees</span> := <span class="id" title="var">v</span>|&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab155"></a><h2 class="section">Set the 721 wrapping fees</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_erc_721_wrapping_fees</span> (<span class="id" title="var">v</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;|<span class="id" title="var">erc721_wrapping_fees</span> := <span class="id" title="var">v</span>|&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab156"></a><h2 class="section">Set the ERC 721 unwrapping fees</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_erc_721_unwrapping_fees</span> (<span class="id" title="var">v</span> : <span class="id" title="var">N</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;|<span class="id" title="var">erc721_unwrapping_fees</span> := <span class="id" title="var">v</span>|&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab157"></a><h2 class="section">Set new governance contract</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">set_governance</span> (<span class="id" title="var">new_governance</span> : <span class="id" title="var">Address</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">s</span>&lt;|<span class="id" title="var">contract</span> := <span class="id" title="var">new_governance</span>|&gt;.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab158"></a><h2 class="section">The Main entrypoint for the governance part of the Minter</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">governance_main</span> (<span class="id" title="var">ctx</span> : <span class="id" title="var">ContractCallContext</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">GovernanceEntrypoints</span>) (<span class="id" title="var">s</span> : <span class="id" title="var">GovernanceStorage</span>) : <span class="id" title="var">option</span> (<span class="id" title="var">list</span> <span class="id" title="var">ActionBody</span> * <span class="id" title="var">GovernanceStorage</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">p</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_erc20_wrapping_fees</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">set_erc_20_wrapping_fees</span> <span class="id" title="var">n</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_erc20_unwrapping_fees</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">set_erc_20_unwrapping_fees</span> <span class="id" title="var">n</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_erc721_wrapping_fees</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">set_erc_721_wrapping_fees</span> <span class="id" title="var">n</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_erc721_unwrapping_fees</span> <span class="id" title="var">n</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">set_erc_721_unwrapping_fees</span> <span class="id" title="var">n</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_governance</span> <span class="id" title="var">a</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">set_governance</span> <span class="id" title="var">a</span> <span class="id" title="var">s</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_dev_pool</span> <span class="id" title="var">p</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">s</span>&lt;|<span class="id" title="var">dev_pool_address</span> := <span class="id" title="var">p</span>|&gt;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_staking</span> <span class="id" title="var">p</span> =&gt; <span class="id" title="var">Some</span> ([], <span class="id" title="var">s</span>&lt;|<span class="id" title="var">staking_address</span> := <span class="id" title="var">p</span>|&gt;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">Set_fees_share</span> <span class="id" title="var">param</span> =&gt; <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">do</span> <span class="id" title="var">_</span> &lt;- <span class="id" title="var">throwIf</span> (<span class="id" title="var">negb</span> ((<span class="id" title="var">param</span>.(<span class="id" title="var">dev_pool</span>) + <span class="id" title="var">param</span>.(<span class="id" title="var">staking</span>) + <span class="id" title="var">param</span>.(<span class="id" title="var">signers</span>)) =? 100)) ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">Some</span> ([], <span class="id" title="var">s</span>&lt;|<span class="id" title="var">fees_share_rec</span> := <span class="id" title="var">param</span>|&gt;)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Governance</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>

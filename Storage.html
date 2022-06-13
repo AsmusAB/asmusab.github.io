@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Storage</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Storage</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+<a name="lab227"></a><h1 class="section">Storage</h1>
+ This is an implementation of the following file.
+
+<div class="paragraph"> </div>
+
+https://github.com/bender-labs/wrap-tz-contracts/blob/master/ligo/minter/tokens_lib.mligo.
+Contains types used to represent the state of the Minter.
+
+<div class="paragraph"> </div>
+
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Blockchain</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Ethereum_Lib</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="keyword">Types</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">String</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ConCert.Execution</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Containers</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">RecordUpdate</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Serializable</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab228"></a><h1 class="section">State types</h1>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Section</span> <span class="id" title="var">Storage</span>.<br/>
+<span class="id" title="keyword">Context</span> {<span class="id" title="var">BaseTypes</span> : <span class="id" title="var">ChainBase</span>}.<br/>
+<span class="id" title="keyword">Set</span> <span class="id" title="var">Nonrecursive</span> <span class="id" title="var">Elimination</span> <span class="id" title="var">Schemes</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab229"></a><h2 class="section">Contract Admin Storage</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">ContractAdminStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkConractAdminStorage</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">administrator</span> : <span class="id" title="var">Address</span> ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">pending_admin</span> : <span class="id" title="var">option</span> <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">signer</span> : <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">oracle</span> : <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">paused</span> : <span class="id" title="var">bool</span> }.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">MintsType</span> := (<span class="id" title="var">FMap</span> <span class="id" title="var">EthEventId</span> <span class="id" title="var">unit</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab230"></a><h2 class="section">Assets Storage</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">AssetsStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkAssetsStorage</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">erc20tokens</span> : (<span class="id" title="var">FMap</span> <span class="id" title="var">EthAddress</span> <span class="id" title="var">TokenAddress</span> );<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc721tokens</span> : (<span class="id" title="var">FMap</span> <span class="id" title="var">EthAddress</span> <span class="id" title="var">Address</span>) ;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mints</span> : <span class="id" title="var">MintsType</span>}.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab231"></a><h2 class="section">Fees share storage</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">FeesShare</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkFeesShare</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">dev_pool</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">signers</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">staking</span> : <span class="id" title="var">N</span>}.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab232"></a><h2 class="section">Governance storage</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">GovernanceStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkGovernanceStorage</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">contract</span> : <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">staking_address</span> : <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">dev_pool_address</span> : <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc20_wrapping_fees</span> : <span class="id" title="var">bps</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc20_unwrapping_fees</span> : <span class="id" title="var">bps</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc721_wrapping_fees</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">erc721_unwrapping_fees</span> : <span class="id" title="var">N</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_share_rec</span> : <span class="id" title="var">FeesShare</span> }.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">TokenLedger</span> := <span class="id" title="var">FMap</span> (<span class="id" title="var">Address</span> * <span class="id" title="var">TokenAddress</span>) <span class="id" title="var">N</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">XTZLedger</span> := (<span class="id" title="var">FMap</span> <span class="id" title="var">Address</span> <span class="id" title="var">N</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab233"></a><h2 class="section">Fees storage</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">FeesStorage</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkFeesStorage</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">fees_storage_signers</span> : <span class="id" title="var">FMap</span> <span class="id" title="var">N</span> <span class="id" title="var">Address</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_tokens</span> : <span class="id" title="var">TokenLedger</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees_storage_xtz</span> : <span class="id" title="var">XTZLedger</span> }.<br/>
+
+<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a name="lab234"></a><h2 class="section">Minter contract state</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Record</span> <span class="id" title="var">State</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">mkStorage</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="id" title="var">admin</span> : <span class="id" title="var">ContractAdminStorage</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">assets</span> : <span class="id" title="var">AssetsStorage</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">governance</span> : <span class="id" title="var">GovernanceStorage</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">fees</span> : <span class="id" title="var">FeesStorage</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">storage_metadata</span> : <span class="id" title="var">MetaData</span> }.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">ReturnType</span> : <span class="id" title="keyword">Type</span> := (<span class="id" title="var">State</span> * <span class="id" title="var">list</span> <span class="id" title="var">ActionBody</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">Storage</span>.<br/>
+</div>
+</div>
+
+<div id="footer">
+<hr/><a href="index.html">Index</a><hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
